@@ -62,10 +62,6 @@ mac_disk_info() {
 
 }
 
-
-
-
-
 mac_get_network() {
     ifconfig_output="$(ifconfig "$net_int" 2>/dev/null || echo 'N/A')"
     
@@ -74,11 +70,11 @@ mac_get_network() {
         network_down="N/A"
         network_up="N/A"
     else
-        # Get network data in bytes, convert them using numfmt
-        network_down="$(netstat -ib | grep "$net_int" | awk '{print $7}' 2>/dev/null || echo 'N/A')"
-        network_up="$(netstat -ib | grep "$net_int" | awk '{print $10}' 2>/dev/null || echo 'N/A')"
+        # Get network data in bytes (using head or tail to grab the first or last occurrence)
+        network_down="$(netstat -ib | grep "$net_int" | awk '{print $7}' | head -n 1 2>/dev/null || echo 'N/A')"
+        network_up="$(netstat -ib | grep "$net_int" | awk '{print $10}' | head -n 1 2>/dev/null || echo 'N/A')"
         
-        # Use numfmt to convert large byte counts to readable MB/s
+        # Convert the byte counts to MB/s
         network_down=$(convert_to_mbps "$network_down")
         network_up=$(convert_to_mbps "$network_up")
     fi
@@ -97,7 +93,7 @@ mac_get_uptime() {
 }
 
 # Get Linux-specific info
-linux_sys_info() {
+linux_disk_info() {
     startup_name="/"
     startup_size="$(df -h / | awk 'NR==2 {print $2}' 2>/dev/null || echo 'N/A')"
     startup_used="$(df -h / | awk 'NR==2 {print $3}' 2>/dev/null || echo 'N/A')"
@@ -166,12 +162,12 @@ main() {
 
     if [[ $which_os -eq 1 ]]; then
         mac_disk_info
-       # mac_get_network
+        mac_get_network
         mac_get_cpu
         mac_get_uptime
     else
         detect_primary_interface  # Detect primary interface
-        linux_sys_info
+        linux_disk_info
         linux_get_network
         linux_get_cpu
         linux_get_uptime
